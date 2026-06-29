@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>こえでこたえる リハビリカード 🍎</title>
+    <style>
+        /* 優しい色合いと、見やすい大きな文字のデザイン */
+        :root {
+            --bg-color: #f7f9fa;
+            --card-bg: #ffffff;
+            --text-color: #2c3e50;
+            --primary-color: #3498db;
+            --success-color: #2ecc71;
+            --warning-color: #f1c40f;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        /* レベルと進捗のヘッダー */
+        .header-info {
+            background-color: #ebf5fb;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .level-badge {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .progress-text {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #34495e;
+        }
+
+        /* ゲージメーター */
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background-color: #d6dbdf;
+            border-radius: 6px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background-color: var(--success-color);
+            transition: width 0.5s ease-out;
+        }
+
+        /* リハビリカードのスタイル */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 24px;
+            padding: 30px 20px;
+            box-shadow: 0 10px 30px var(--shadow-color);
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* イラスト表示エリア（画像または絵文字） */
+        .illustration-container {
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 15px 0;
+        }
+
+        .emoji-display {
+            font-size: 8rem;
+            line-height: 1;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.1));
+        }
+
+        .image-display {
+            max-height: 100%;
+            max-width: 100%;
+            object-fit: contain;
+            border-radius: 12px;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.1));
+        }
+
+        .question-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        /* マイクボタンのデザイン */
+        .mic-button {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            border: none;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 2.2rem;
+            cursor: pointer;
+            outline: none;
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px 0;
+        }
+
+        .mic-button:hover {
+            transform: scale(1.05);
+            background-color: #2980b9;
+        }
+
+        .mic-button:active {
+            transform: scale(0.95);
+        }
+
+        /* 音声認識中のアニメーション */
+        .mic-button.listening {
+            background-color: #e74c3c;
+            box-shadow: 0 0 0 15px rgba(231, 76, 60, 0.3);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(231, 76, 60, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+        }
+
+        .status-message {
+            font-size: 1.1rem;
+            min-height: 1.5rem;
+            margin: 8px 0;
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+
+        /* 認識された言葉の表示 */
+        .recognized-word {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #2c3e50;
+            background-color: #ecf0f1;
+            padding: 8px 20px;
+            border-radius: 12px;
+            display: inline-block;
+            margin: 5px 0;
+            min-width: 150px;
+            min-height: 1.8rem;
+        }
+
+        /* 結果表示 */
+        .result-container {
+            font-size: 2rem;
+            font-weight: bold;
+            min-height: 2.5rem;
+            margin: 10px 0;
+        }
+
+        .result-success {
+            color: var(--success-color);
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* ヒント表示エリア */
+        .hint-card {
+            background-color: #fef9e7;
+            border: 2px dashed #f5b041;
+            border-radius: 16px;
+            padding: 15px;
+            margin: 15px 0;
+            display: none;
+        }
+
+        .hint-title {
+            font-weight: bold;
+            color: #d35400;
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+        }
+
+        .hint-content {
+            font-size: 1.3rem;
+            letter-spacing: 3px;
+            color: #e67e22;
+            font-weight: bold;
+        }
+
+        /* 操作ボタン */
+        .action-button {
+            padding: 12px 35px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            background-color: var(--success-color);
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+            margin-top: 10px;
+            display: none;
+            transition: all 0.2s ease;
+        }
+
+        .action-button:hover {
+            background-color: #27ae60;
+            transform: translateY(-2px);
+        }
+
+        /* 音声再生ボタンの補助 */
+        .speak-button {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            cursor: pointer;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+
+        .speak-button:hover {
+            color: #2980b9;
+        }
+
+        /* レベルアップ時のお祝い画面 */
+        .level-up-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.96);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transform: translateY(100%);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-radius: 24px;
+        }
+
+        .level-up-modal.show {
+            transform: translateY(0);
+        }
+
+        .level-up-title {
+            font-size: 2.2rem;
+            color: #e74c3c;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .level-up-text {
+            font-size: 1.3rem;
+            color: var(--text-color);
+            margin-bottom: 25px;
+            padding: 0 20px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- レベルと進捗表示 -->
+    <div class="header-info">
+        <div>
+            <span class="level-badge" id="level-badge">レベル 1：２文字</span>
+        </div>
+        <div style="text-align: right; flex-grow: 1; margin-left: 20px;">
+            <div class="progress-text" id="progress-text">せいかい： 0 / 10</div>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="progress-bar-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <!-- レベルアップ時のポップアップ画面 -->
+        <div class="level-up-modal" id="level-up-modal">
+            <div style="font-size: 5rem; margin-bottom: 10px;">🎉</div>
+            <div class="level-up-title">レベルアップ！</div>
+            <div class="level-up-text" id="level-up-text">おめでとうございます！<br>次は３文字の言葉に挑戦です！</div>
+            <button class="action-button" id="start-next-level-btn" style="display: block;">次へすすむ ➡️</button>
+        </div>
+
+        <div class="question-text">
+            これ なあに？
+            <button class="speak-button" id="speak-question-btn" title="声をきく">🔊</button>
+        </div>
+        
+        <!-- イラスト表示エリア (画像優先、なければ絵文字) -->
+        <div class="illustration-container" id="illustration-container">
+            <div class="emoji-display" id="emoji-display">🐕</div>
+        </div>
+
+        <!-- 音声入力の状況表示 -->
+        <div class="status-message" id="status-message">マイクボタンを押して話してください</div>
+
+        <!-- マイクボタン -->
+        <button class="mic-button" id="mic-btn">🎙️</button>
+
+        <div style="margin: 10px 0;">
+            <div class="status-message" style="font-size: 0.9rem; margin-bottom: 5px;">あなたが言った言葉：</div>
+            <div class="recognized-word" id="recognized-word">（お返事待ち）</div>
+        </div>
+
+        <!-- 結果表示 -->
+        <div class="result-container" id="result-container"></div>
+
+        <!-- ヒント表示 -->
+        <div class="hint-card" id="hint-card">
+            <div class="hint-title">💡 やさしいヒント</div>
+            <div class="hint-content" id="hint-content"></div>
+        </div>
+
+        <!-- 次へ進むボタン -->
+        <button class="action-button" id="next-btn">つぎへ すすむ ➡️</button>
+    </div>
+</div>
+
+<script>
+    // 問題の候補リスト (各レベル20問ずつ定義。顔だけでなく、なるべく全身の絵文字を採用)
+    const questionsPool = {
+        1: [ // 2文字の言葉 (20問) - 🐕 や 🐈 などの全身絵文字に変更
+            { emoji: '🐕', answers: ['いぬ', '犬', 'イヌ'], hint1: '〇 〇 (２文字)', hint2: '最初の文字は「い」', image: 'assets/images/inu.png' },
+            { emoji: '🐈', answers: ['ねこ', '猫', 'ネコ'], hint1: '〇 〇 (２文字)', hint2: '最初の文字は「ね」', image: 'assets/images/neko.png' },
+            { emoji: '🐘', answers: ['ぞう', '象', 'ゾウ'], hint1: '〇 〇 (２文字)', hint2: '最初の文字は「ぞ」', image: 'assets/images/zou.png' },
+            { emoji: '🐒', answers: ['さる', '猿', 'サル'], hint1: '〇 〇 (２文字)', hint2: '最初の文字は「さ」', image: 'assets/images/saru.png' },
+            { emoji: '🐙', answers: ['たこ', '蛸', 'タコ'], hint1: '〇 〇 (２文字)', hint2: '最初の文字は「た」', image: 'assets/images/tako.png' },
+            { emoji: ' squid', answers: ['いか', '烏賊', 'イカ'], hint1: '〇 〇 (２文字)', hint2: '最初の文字は「い」', emojiOverride: '🦑', image: 'assets/images/ika.png' },
+            { emoji: '🐢', answers: ['かめ', '亀', 'カメ'], hint1: '〇 〇 (２文字)', hint2: '最初の文字は「か」', image: 'assets/images/kame.png' },
+            { emoji: '🌂', answers: ['かさ', '傘', 'カサ'], hint1: '〇 〇 (２文字)', hint2: '最初の文字は「か」', image: 'assets/images/kasa.png' },
+            { emoji: '📚', answers: ['ほん', '本', 'ホン'], hint1: '〇 〇 (２文字)', hint2: '最初の文字は「ほ」', image: 'assets/images/hon.png' },
+            { emoji: '🪑', answers: ['いす', '椅子', 'イス'], hint1: '〇 〇 (２文字)', hint2: '最初の文字は「い」', image: 'assets/images/isu.png' },
+            { emoji: '👟', answers: ['くつ', '靴', 'クツ'], hint1: '〇 〇 (２文字)', hint2: '最初の文字は「く」', image: 'assets/images/kutsu.png' },
+            { emoji: '🔑', answers: ['かぎ', '鍵', 'カギ'], hint1: '〇 〇 (２文字)', hint2: '最初の文字は「か」', image: 'assets/images/kagi.png' },
+            { emoji: '👂', answers: ['みみ', '耳', 'ミミ'], hint1: '〇 〇 (２文字)', hint2: '最初の文字は「み」', image: 'assets/images/mimi.png' },
+            { emoji: '👄', answers: ['くち', '口', 'クチ'], hint1: '〇 〇 (２文字)', hint2: '最初の文字は「く」', image: 'assets/images/kuchi.png' },
+            { emoji: '🖊️', answers: ['ぺん', 'ペン'], hint1: '〇 〇 (２文字)', hint2: '最初の文字は「ぺ」', image: 'assets/images/pen.png' },
+            { emoji: '地図', answers: ['ちず', '地図', 'チズ'], hint1: '〇 〇 (２文字)', hint2: '最初の文字は「ち」', emojiOverride: '🗺️', image: 'assets/images/chizu.png' },
+            { emoji: '🔔', answers: ['かね', '鐘', 'カネ'], hint1: '〇 〇 (２文字)', hint2: '最初の文字は「か」', image: 'assets/images/kane.png' },
+            { emoji: '🧺', answers: ['かご', '籠', 'カゴ'], hint1: '〇 〇 (２文字)', hint2: '最初の文字は「か」', image: 'assets/images/kago.png' },
+            { emoji: '🪈', answers: ['ふえ', '笛', 'フエ'], hint1: '〇 〇 (２文字)', hint2: '最初の文字は「ふ」', image: 'assets/images/fue.png' },
+            { emoji: '🏹', answers: ['ゆみ', '弓', 'ユミ'], hint1: '〇 〇 (２文字)', hint2: '最初の文字は「ゆ」', image: 'assets/images/yumi.png' }
+        ],
+        2: [ // 3文字の言葉 (20問)
+            { emoji: '🍎', answers: ['りんご', '林檎', 'リンゴ'], hint1: '〇 〇 〇 (３文字)', hint2: '最初の文字は「り」', image: 'assets/images/ringo.png' },
+            { emoji: '🍌', answers: ['ばなな', 'バナナ'], hint1: '〇 〇 〇 (３文字)', hint2: '最初の文字は「ば」', image: 'assets/images/banana.png' },
+            { emoji: '🚗', answers: ['くるま', '車', 'クルマ'], hint1: '〇 〇 〇 (３文字)', hint2: '最初の文字は「く」', image: 'assets/images/kuruma.png' },
+            { emoji: '🍉', answers: ['すいか', '西瓜', 'スイカ'], hint1: '〇 〇 〇 (３文字)', hint2: '最初の文字は「す」', image: 'assets/images/suika.png' },
+            { emoji: '🍊', answers: ['みかん', '蜜柑', 'ミカン'], hint1: '〇 〇 〇 (３文字)', hint2: '最初の文字は「み」', image: 'assets/images/mikan.png' },
+            { emoji: '🍅', answers: ['とまと', 'トマト'], hint1: '〇 〇 〇 (３文字)', hint2: '最初の文字は「と」', image: 'assets/images/tomato.png' },
+            { emoji: '👒', answers: ['ぼうし', '帽子', 'ボウシ'], hint1: '〇 〇 〇 (３文字)', hint2: '最初の文字は「ぼ」', image: 'assets/images/boushi.png' },
+            { emoji: '⌚', answers: ['とけい', '時計', 'トケイ'], hint1: '〇 〇 〇 (３文字)', hint2: '最初の文字は「と」', image: 'assets/images/tokei.png' },
+            { emoji: '🥛', answers: ['こっぷ', 'コップ'], hint1: '〇 〇 〇 (３文字)', hint2: '最初の文字は「こ」', image: 'assets/images/koppu.png' },
+            { emoji: '🥚', answers: ['たまご', '卵', 'タマゴ'], hint1: '〇 〇 〇 (３文字)', hint2: '最初の文字は「た」', image: 'assets/images/tamago.png' },
+            { emoji: '🦒', answers: ['きりん', '麒麟', 'キリン'], hint1: '〇 〇 〇 (３文字)', hint2: '最初の文字は「き」', image: 'assets/images/kirin.png' },
+            { emoji: '🐬', answers: ['いるか', '海豚', 'イルカ'], hint1: '〇 〇 〇 (３文字)', hint2: '最初の文字は「い」', image: 'assets/images/iruka.png' },
+            { emoji: '🐳', answers: ['くじら', '鯨', 'クジラ'], hint1: '〇 〇 〇 (３文字)', hint2: '最初の文字は「く」', image: 'assets/images/kujira.png' },
+            { emoji: '🐸', answers: ['かえる', '蛙', 'カエル'], hint1: '〇 〇 〇 (３文字)', hint2: '最初の文字は「か」', image: 'assets/images/kaeru.png' },
+            { emoji: '🍇', answers: ['ぶどう', '葡萄', 'ブドウ'], hint1: '〇 〇 〇 (３文字)', hint2: '最初の文字は「ぶ」', image: 'assets/images/budou.png' },
+            { emoji: '💼', answers: ['かばん', 'カバン', '鞄'], hint1: '〇 〇 〇 (３文字)', hint2: '最初の文字は「か」', image: 'assets/images/kaban.png' },
+            { emoji: '✂️', answers: ['はさみ', '鋏', 'ハサミ'], hint1: '〇 〇 〇 (３文字)', hint2: '最初の文字は「は」', image: 'assets/images/hasami.png' },
+            { emoji: '💊', answers: ['くすり', '薬', 'クスリ'], hint1: '〇 〇 〇 (３文字)', hint2: '最初の文字は「く」', image: 'assets/images/kusuri.png' },
+            { emoji: '👕', answers: ['しゃつ', 'シャツ'], hint1: '〇 〇 〇 (３文字)', hint2: '最初の文字は「し」', image: 'assets/images/shatsu.png' },
+            { emoji: '🪞', answers: ['かがみ', '鏡', 'カガミ'], hint1: '〇 〇 〇 (３文字)', hint2: '最初の文字は「か」', image: 'assets/images/kagami.png' }
+        ],
+        3: [ // 4文字の言葉 (20問)
+            { emoji: '✈️', answers: ['ひこうき', '飛行機', 'ヒコウキ'], hint1: '〇 〇 〇 〇 (４文字)', hint2: '最初の文字は「ひ」', image: 'assets/images/hikouki.png' },
+            { emoji: '✏️', answers: ['えんぴつ', '鉛筆', 'エンピツ'], hint1: '〇 〇 〇 〇 (４文字)', hint2: '最初の文字は「え」', image: 'assets/images/enpitsu.png' },
+            { emoji: '🌻', answers: ['ひまわり', '向日葵', 'ヒマワリ'], hint1: '〇 〇 〇 〇 (４文字)', hint2: '最初の文字は「ひ」', image: 'assets/images/himawari.png' },
+            { emoji: '🚃', answers: ['でんしゃ', '電車', 'デンシャ'], hint1: '〇 〇 〇 〇 (４文字)', hint2: '最初の文字は「で」', image: 'assets/images/densha.png' },
+            { emoji: '🚲', answers: ['じてんしゃ', '自転車', 'ジテンシャ'], hint1: '〇 〇 〇 〇 (４文字)', hint2: '最初の文字は「じ」', image: 'assets/images/jitensha.png' },
+            { emoji: '🐧', answers: ['ぺんぎん', 'ペンギン'], hint1: '〇 〇 〇 〇 (４文字)', hint2: '最初の文字は「ぺ」', image: 'assets/images/pengin.png' },
+            { emoji: '🎈', answers: ['ふうせん', '風船', 'フウセン'], hint1: '〇 〇 〇 〇 (４文字)', hint2: '最初の文字は「ふ」', image: 'assets/images/fuusen.png' },
+            { emoji: '🥕', answers: ['にんじん', '人参', 'ニンジン'], hint1: '〇 〇 〇 〇 (４文字)', hint2: '最初の文字は「に」', image: 'assets/images/ninjin.png' },
+            { emoji: '🧅', answers: ['たまねぎ', '玉ねぎ', 'タマネギ'], hint1: '〇 〇 〇 〇 (４文字)', hint2: '最初の文字は「た」', image: 'assets/images/tamanegi.png' },
+            { emoji: '🦫', answers: ['びーばー', 'ビーバー'], hint1: '〇 〇 〇 〇 (４文字)', hint2: '最初の文字は「び」', image: 'assets/images/biibaa.png' },
+            { emoji: '🦉', answers: ['ふくろう', 'フクロウ', '梟'], hint1: '〇 〇 〇 〇 (４文字)', hint2: '最初の文字は「ふ」', image: 'assets/images/fukurou.png' },
+            { emoji: '🦋', answers: ['ちょうちょ', '蝶々', 'チョウチョ'], hint1: '〇 〇 〇 〇 (４文字)', hint2: '最初の文字は「ち」', image: 'assets/images/choucho.png' },
+            { emoji: '🪚', answers: ['のこぎり', '鋸', 'ノコギリ'], hint1: '〇 〇 〇 〇 (４文字)', hint2: '最初の文字は「の」', image: 'assets/images/nokogiri.png' },
+            { emoji: '🧲', answers: ['じしゃく', '磁石', 'ジシャク'], hint1: '〇 〇 〇 〇 (４文字)', hint2: '最初の文字は「じ」', image: 'assets/images/jishaku.png' },
+            { emoji: '🧼', answers: ['せっけん', '石鹸', 'セッケン'], hint1: '〇 〇 〇 〇 (４文字)', hint2: '最初の文字は「せ」', image: 'assets/images/sekken.png' },
+            { emoji: '🧽', answers: ['すぽんじ', 'スポンジ'], hint1: '〇 〇 〇 〇 (４文字)', hint2: '最初の文字は「す」', image: 'assets/images/suponji.png' },
+            { emoji: '🍙', answers: ['おにぎり', 'おむすび'], hint1: '〇 〇 〇 〇 (４文字)', hint2: '最初の文字は「お」', image: 'assets/images/onigiri.png' },
+            { emoji: '🍩', answers: ['どーなつ', 'ドーナツ'], hint1: '〇 〇 〇 〇 (４文字)', hint2: '最初の文字は「ど」', image: 'assets/images/doonatsu.png' },
+            { emoji: '🫑', answers: ['ぴーまん', 'ピーマン'], hint1: '〇 〇 〇 〇 (４文字)', hint2: '最初の文字は「ぴ」', image: 'assets/images/piiman.png' },
+            { emoji: '🍯', answers: ['はちみつ', 'ハチミツ', '蜂蜜'], hint1: '〇 〇 〇 〇 (４文字)', hint2: '最初の文字は「は」', image: 'assets/images/hachimitsu.png' }
+        ]
+    };
+
+    let currentLevel = 1;         // 現在のレベル
+    let activeQuestions = [];    // 今遊んでいるランダム抽出された10問
+    let currentQuestionIdx = 0;   // 今の問題の番号 (0〜9)
+    let correctCount = 0;         // 今のレベルでの正解数 (0〜10)
+    let wrongCount = 0;           // 現在の問題の間違い数
+    let isListening = false;
+
+    // HTMLの要素を取得
+    const levelBadge = document.getElementById('level-badge');
+    const progressText = document.getElementById('progress-text');
+    const progressBarFill = document.getElementById('progress-bar-fill');
+    const illustrationContainer = document.getElementById('illustration-container');
+    const statusMessage = document.getElementById('status-message');
+    const micBtn = document.getElementById('mic-btn');
+    const recognizedWord = document.getElementById('recognized-word');
+    const resultContainer = document.getElementById('result-container');
+    const hintCard = document.getElementById('hint-card');
+    const hintContent = document.getElementById('hint-content');
+    const nextBtn = document.getElementById('next-btn');
+    const speakQuestionBtn = document.getElementById('speak-question-btn');
+    const levelUpModal = document.getElementById('level-up-modal');
+    const levelUpText = document.getElementById('level-up-text');
+    const startNextLevelBtn = document.getElementById('start-next-level-btn');
+
+    // 配列をランダムにシャッフルし、指定の件数を取り出す関数
+    function getRandomQuestions(level, count = 10) {
+        const pool = [...questionsPool[level]];
+        // フィッシャー・イェーツのシャッフル
+        for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        return pool.slice(0, count);
+    }
+
+    // 音声認識の準備
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.lang = 'ja-JP';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => {
+            isListening = true;
+            micBtn.classList.add('listening');
+            statusMessage.innerText = 'どうぞ、お話しください... 🎙️';
+            recognizedWord.innerText = '（きいています）';
+            resultContainer.innerHTML = '';
+        };
+
+        recognition.onend = () => {
+            isListening = false;
+            micBtn.classList.remove('listening');
+        };
+
+        recognition.onresult = (event) => {
+            const speechResult = event.results[0][0].transcript.trim();
+            recognizedWord.innerText = speechResult;
+            checkAnswer(speechResult);
+        };
+
+        recognition.onerror = (event) => {
+            console.error(event.error);
+            if (event.error === 'no-speech') {
+                statusMessage.innerText = '声が聞き取れませんでした。もう一度押してください。';
+            } else {
+                statusMessage.innerText = 'マイクが使えません。許可を確認してください。';
+            }
+            recognizedWord.innerText = '（もう一度試してください）';
+        };
+    } else {
+        statusMessage.innerText = '音声認識に対応していません。Google Chromeをお使いください。';
+        micBtn.style.display = 'none';
+    }
+
+    // 音声読み上げ機能
+    function speakText(text) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ja-JP';
+            utterance.rate = 0.95;
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    speakQuestionBtn.addEventListener('click', () => {
+        speakText('これ なあに？');
+    });
+
+    // 新しいレベルを開始するときの準備
+    function startLevel(level) {
+        currentLevel = level;
+        correctCount = 0;
+        currentQuestionIdx = 0;
+        // 20問の中からランダムに10問を抽出する！
+        activeQuestions = getRandomQuestions(currentLevel, 10);
+        loadQuestion();
+    }
+
+    // 画面の更新（新しい問題を表示）
+    function loadQuestion() {
+        const q = activeQuestions[currentQuestionIdx];
+
+        // イラスト表示を更新 (もし assets/images/ に画像があればそれを表示し、なければ絵文字を表示する)
+        illustrationContainer.innerHTML = '';
+        const img = new Image();
+        img.src = q.image;
+        img.className = 'image-display';
+        img.alt = q.answers[0];
+        
+        // 画像ロード成功時は画像を表示
+        img.onload = () => {
+            illustrationContainer.appendChild(img);
+        };
+        // 画像ロード失敗時、または画像がない時は絵文字を表示
+        img.onerror = () => {
+            const emojiDiv = document.createElement('div');
+            emojiDiv.className = 'emoji-display';
+            emojiDiv.id = 'emoji-display';
+            // 特殊な絵文字表示用の上書きがあればそれを使う (いか🦑 などのバグ回避用)
+            emojiDiv.innerText = q.emojiOverride || q.emoji;
+            illustrationContainer.appendChild(emojiDiv);
+        };
+
+        // 画面初期化
+        recognizedWord.innerText = '（お返事待ち）';
+        statusMessage.innerText = 'マイクボタンを押して話してください';
+        resultContainer.innerHTML = '';
+        hintCard.style.display = 'none';
+        nextBtn.style.display = 'none';
+        wrongCount = 0;
+
+        // レベルと進捗の更新
+        updateProgressUI();
+
+        // 自動で「これなあに？」と話す
+        setTimeout(() => {
+            speakText('これ なあに？');
+        }, 500);
+    }
+
+    // 進捗（スコアやゲージ）の表示を更新する
+    function updateProgressUI() {
+        const levelNames = { 1: 'レベル 1：２文字', 2: 'レベル 2：３文字', 3: 'レベル 3：４文字' };
+        levelBadge.innerText = levelNames[currentLevel];
+        progressText.innerText = `せいかい： ${correctCount} / 10`;
+
+        // ゲージの幅を更新
+        const percentage = (correctCount / 10) * 100;
+        progressBarFill.style.width = `${percentage}%`;
+    }
+
+    // マイクボタンを押したときの動作
+    micBtn.addEventListener('click', () => {
+        if (!recognition) return;
+        if (isListening) {
+            recognition.stop();
+        } else {
+            recognition.start();
+        }
+    });
+
+    // 答え合わせのロジック
+    function checkAnswer(userSpeech) {
+        const q = activeQuestions[currentQuestionIdx];
+
+        // ひらがな・カタカナ・漢字の揺れを許容
+        const isCorrect = q.answers.some(ans => {
+            return userSpeech.includes(ans) || ans.includes(userSpeech);
+        });
+
+        if (isCorrect) {
+            // 正解の場合
+            resultContainer.innerHTML = '<span class="result-success">🎯 せいかい！ すごい！</span>';
+            statusMessage.innerText = 'よくできました！';
+            speakText('せいかい！ すごいです！');
+            
+            correctCount++;
+            updateProgressUI();
+
+            // 10問正解したかチェック
+            if (correctCount >= 10) {
+                setTimeout(showLevelUp, 1500); // 少し間を置いてレベルアップ画面を出す
+            } else {
+                nextBtn.style.display = 'inline-block';
+            }
+            hintCard.style.display = 'none';
+        } else {
+            // 不正解・聞き取りミスの場合
+            wrongCount++;
+            resultContainer.innerHTML = '<span style="color: #e74c3c;">おしい！</span>';
+            statusMessage.innerText = 'もう一回チャレンジしてみましょう';
+            
+            hintCard.style.display = 'block';
+            if (wrongCount === 1) {
+                hintContent.innerText = q.hint1;
+                speakText('ヒントです。' + q.hint1.replace(/〇/g, 'まる') + 'です。');
+            } else {
+                hintContent.innerText = q.hint2;
+                speakText('ヒントです。' + q.hint2);
+            }
+        }
+    }
+
+    // レベルアップのお祝い画面を出す
+    function showLevelUp() {
+        levelUpModal.classList.add('show');
+        
+        if (currentLevel < 3) {
+            const nextLevel = currentLevel + 1;
+            const targetCharCount = nextLevel === 2 ? '３文字' : '４文字';
+            levelUpText.innerHTML = `おめでとうございます！🎉<br>レベル ${currentLevel} をクリアしました！<br>次は ${targetCharCount} の言葉に挑戦しましょう！`;
+            speakText('レベルアップ！おめでとうございます！つぎは' + targetCharCount + 'の言葉に挑戦しましょう！');
+        } else {
+            // レベル3（最終レベル）をクリアしたとき
+            levelUpText.innerHTML = `おめでとうございます！🎉🎉<br>すべてのレベルをクリアしました！<br>すばらしいリハビリでしたね！`;
+            speakText('おめでとうございます！すべてのレベルをクリアしました！素晴らしいリハビリでした！');
+            startNextLevelBtn.innerText = 'もういちど最初からあそぶ 🔄';
+        }
+    }
+
+    // レベルアップ画面の「次へすすむ」ボタンを押したとき
+    startNextLevelBtn.addEventListener('click', () => {
+        levelUpModal.classList.remove('show');
+        
+        if (currentLevel < 3) {
+            startLevel(currentLevel + 1);
+        } else {
+            // 最初からやり直す
+            startLevel(1);
+        }
+    });
+
+    // 「つぎへすすむ」ボタンを押したとき
+    nextBtn.addEventListener('click', () => {
+        // 残り問題がある限り次に進む (正解が10問未満なら)
+        currentQuestionIdx = (currentQuestionIdx + 1) % activeQuestions.length;
+        loadQuestion();
+    });
+
+    // 最初に画面を開いたときの処理
+    window.onload = () => {
+        startLevel(1);
+    };
+</script>
+
+</body>
+</html>
